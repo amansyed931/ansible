@@ -1,0 +1,33 @@
+#!/usr/bin/env ansible-playbook
+## vim: noai:ts=2:sw=2:et
+---
+- name: "Bulk VM provisioning in Azure"
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    csvfile: "{{ lookup('file', './input/input_win.csv') }}"
+ # vars_files:
+  #  - 'vars/ssh_key.yaml'
+   # - 'vars/admin_pass.yaml'
+    #- 'vars/input.yaml'
+  tasks:
+
+    - name: "Load .csv file to input.yaml"
+      template:
+        src: "./templates/csv_to_yaml_windows.j2"
+        dest: "./vars/input_windows.yaml"
+      run_once: true
+
+    - name: "Loading variable from vars dir"
+      include_vars:
+        dir: 'vars'
+
+
+    - include_tasks: task_vm_V1.yaml
+      with_items: 
+        - "{{ input }}"
+      loop_control:
+        loop_var: outer_item
+

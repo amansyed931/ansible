@@ -1,0 +1,45 @@
+    - name: create virtual network
+      azure_rm_virtualnetwork:
+        resource_group: "{{input.resource_group}}"
+        name: "{{input.vnet_name}}"
+        address_prefixes: "{{input.vnet_address}}"
+    - name: add subnet
+      azure_rm_subnet:
+        resource_group: "{{input.resource_group}}"
+        name: "{{input.subnet_name}}"
+        address_prefix: "{{input.subnet_address}}"
+        virtual_network: "{{input.vnet_name}}"
+    - name: create public ip address
+      azure_rm_publicipaddress:
+        resource_group: "{{input.resource_group}}"
+        allocation_method: "{{input.ip_allocation}}"
+        name: "{{input.public_ip_name}}"
+    - name: add security group
+      azure_rm_securitygroup:
+        resource_group: "{{input.resource_group}}"
+        name: ansible_test_SG1
+    - name: create network interface
+      azure_rm_networkinterface:
+        resource_group: "{{input.resource_group}}"
+        name: "{{input.network_interface_name}}"
+        virtual_network: "{{input.vnet_name}}"
+        subnet: "{{input.subnet_name}}"
+        public_ip_name: "{{input.public_ip_name}}"
+        security_group: "{{input.security_group_name}}"
+    - name: create VM
+      azure_rm_virtualmachine:
+        resource_group: "{{input.resource_group}}"
+        name: "{{input.vm_name}}"
+        vm_size: "{{input.vm_size}}"
+        admin_username: "{{input.admin_username}}"
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: "{{input.ssh_path}}"
+            key_data: "{{input.ssh_key}}"
+        network_interfaces: "{{input.network_interface_name}}"
+        image:
+          offer: "{{input.vm_image_offer}}"
+          publisher: "{{input.vm_image_publisher}}"
+          sku: "{{input.vm_image_sku}}"
+          version: "{{input.vm_image_version}}"
+

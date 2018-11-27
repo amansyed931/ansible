@@ -1,0 +1,88 @@
+  - debug: var=outer_item
+
+#  - name: "Define tnd reset the runtime variables"
+#    set_fact:
+#      userdata_user_scr: './scripts/{{outer_item.vm_name}}_userdata_user.txt'
+#      userdata_disk_scr: './scripts/{{outer_item.vm_name}}_userdata_disk.txt'
+
+ 
+  - name: create network interface
+    azure_rm_networkinterface:
+      resource_group: "{{ outer_item.resource_group }}"
+      name: "{{ outer_item.network_interface_name }}"
+      virtual_network: "{{ outer_item.vnet_name }}"
+      subnet: "{{ outer_item.subnet_name }}"
+      public_ip: false
+#      public_ip_name: "{{ outer_item.vm_name + 'pip' }}"
+      private_ip_address: "{{ outer_item.private_ip }}"
+      private_ip_allocation_method: "{{ outer_item.ip_allocation }}" 
+      security_group: "{{ outer_item.security_group_name }}"
+
+#  - name: "Update user-data script for user creation in windows VM"
+#    template:
+#      src: './templates/windows_user_creation.j2'
+#      dest: '{{ userdata_user_scr }}'
+#    when: (outer_item.dtuser|default("")) == "yes" and outer_item.os_type == "Windows"
+
+#  - name: " create final user-data script"
+#    shell: touch {{ userdata_user_scr }} && echo "#ps1_sysnative" > './scripts/user-data.txt' && cat {{ userdata_user_scr }} >> './scripts/user-data.txt'
+#    when: outer_item.os_type == "Windows"
+
+  - debug: var=outer_item.os_type
+  - name: create linux vm
+    azure_rm_virtualmachine:
+      resource_group: "{{ outer_item.resource_group }}"
+      name: "{{ outer_item.vm_name }}"
+      vm_size: "{{ outer_item.vm_size }}"
+      os_type: "{{ outer_item.os_type }}"
+      admin_username: "{{ outer_item.admin_username }}"
+      storage_account: "{{ outer_item.storage_account_name }}"
+      ssh_password_enabled: "{{ ssh_input.ssh_enabled }}"
+      ssh_public_keys:
+        - path: "{{ ssh_input.ssh_path }}"
+          key_data: "{{ ssh_input.ssh_key }}"
+      virtual_network: "{{ outer_item.vnet_name }}"
+      subnet: "{{ outer_item.subnet_name }}"
+      network_interfaces: "{{outer_item.network_interface_name }}"
+      data_disks: "{{ outer_item.data_disks }}"
+      image:
+        offer: "{{outer_item.vm_image_offer}}"
+        publisher: "{{outer_item.vm_image_publisher}}"
+        sku: "{{outer_item.vm_image_sku}}"
+        version: "{{outer_item.vm_image_version}}"
+      tags: "{{ outer_item.tags }}"
+#      userdata:  "{{lookup('file','./scripts/user-data.txt')}}"
+    when: outer_item.os_type == "Linux"
+    register: linux_vm_output
+  - name: create windows vm
+    azure_rm_virtualmachine:
+      resource_group: ansible
+      name: "{{ outer_item.vm_name }}"
+      vm_size:  "{{ outer_item.vm_size }}"
+      os_type: "{{ outer_item.os_type }}"
+      admin_username: "{{ outer_item.admin_username }}"
+      admin_password: "{{ password.admin_password }}"
+      storage_account: ansibletestvm13934
+      virtual_network: "{{ outer_item.vnet_name }}"
+      subnet: "{{ outer_item.subnet_name }}"
+      network_interfaces: "{{ outer_item.network_interface_name }}"
+      data_disks: "{{ outer_item.data_disks }}"
+      image:
+        offer: "{{outer_item.vm_image_offer}}"
+        publisher: "{{outer_item.vm_image_publisher}}"
+        sku: "{{outer_item.vm_image_sku}}"
+        version: "{{outer_item.vm_image_version}}"
+      tags: "{{outer_item.tags}}"
+#      userdata:  "{{lookup('file','./scripts/user-data.txt')}}"
+    when: outer_item.os_type == "Windows"
+    register: windows_vm_output
+  - name: adding host to ansible host file
+    add_host:
+      name: "{{ outer_item.private_ip }}"
+      groups: ansible-hosts
+    when: linux_vm_output.failed == false and windows_vm_output.failed == false
+
+
+#  - name: create a user and add it to Administrator groups
+#    script: './scripts/user-data.ps1'
+#    when: (outer_item.dtuser|default("")) == "yes" and outer_item.os_type == "Windows"

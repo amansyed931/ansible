@@ -1,0 +1,37 @@
+  - name: create public ip address
+    azure_rm_publicipaddress:
+      resource_group: "{{ outer_item.resource_group}}"
+      allocation_method: "{{ outer_item.ip_allocation}}"
+      name: "{{ outer_item.public_ip_name }}"
+
+  - name: create network interface
+    azure_rm_networkinterface:
+      resource_group: "{{ outer_item.resource_group }}"
+      name: "{{ outer_item.network_interface_name }}"
+      virtual_network: "{{ outer_item.vnet_name }}"
+      subnet: "{{ outer_item.subnet_name }}"
+      public_ip_name: "{{ outer_item.public_ip_name }}"
+      security_group: "{{ outer_item.security_group_name }}"
+
+ # - debug: var=os_type
+  #- set_fact:
+   #   os_based_option: "{% if os_type=='Linux' %}{{ssh_input}}{% else %}{{admin_input}}{% endif %}"
+
+  - name: create VM
+    azure_rm_virtualmachine:
+      resource_group: "{{ outer_item.resource_group }}"
+      name: "{{ outer_item.vm_name }}"
+      storage_account: ansibletestvm13934
+      vm_size: "{{ outer_item.vm_size }}"
+      os_type: "{{ outer_item.os_type }}"
+      admin_username: "{{ outer_item.admin_username }}"
+      admin_password: "{{ outer_item.admin_password }}"
+      virtual_network: "{{ outer_item.vnet_name }}"
+      subnet: "{{ outer_item.subnet_name }}"
+      network_interfaces: "{{ outer_item.network_interface_name }}"
+      image:
+        offer: "{{outer_item.vm_image_offer}}"
+        publisher: "{{outer_item.vm_image_publisher}}"
+        sku: "{{outer_item.vm_image_sku}}"
+        version: "{{outer_item.vm_image_version}}"
+

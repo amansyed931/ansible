@@ -1,0 +1,20 @@
+#!/usr/bin/env ansible-playbook
+## vim: noai:ts=2:sw=2:et
+---
+- name: "Test CSV to List"
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    csvfile: "{{ lookup('file', 'input.csv') }}"
+
+  tasks:
+    - debug: "var=csvfile"
+
+    - name: "CSV to Yaml"
+      template:
+        src: "./templates/csv_to_yaml.j2"
+        dest: "./vars/input.yaml"
+      run_once: true
+

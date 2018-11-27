@@ -1,0 +1,8 @@
+
+
+- name: remove network interface card
+  azure_rm_networkinterface:
+    resource_group: "{{ outer_item.resource_group }}"
+    name: "{{ outer_item.network_interface_name }}"
+    state: absent
+
